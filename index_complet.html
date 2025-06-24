@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte interactive – suivi des pharmacies contactées</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #progression {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #f0f0f0;
+            display: inline-block;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        #map {
+            width: 95vw;
+            height: 90vh;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h2>Carte interactive – suivi des pharmacies contactées</h2>
+    <div id="progression">Chargement...</div>
+    <div id="map"></div>
+    <script>
+        fetch("data_pharmacies.json")
+            .then(response => response.json())
+            .then(data => {
+                const departments = Object.keys(data);
+                const values = departments.map(dep => data[dep].total);
+                const contacted = departments.map(dep => data[dep].contacted || 0);
+                const total = values.reduce((a, b) => a + b, 0);
+                const totalContacted = contacted.reduce((a, b) => a + b, 0);
+
+                const trace = {
+                    type: "choropleth",
+                    locationmode: "ISO-3",
+                    locations: departments.map(dep => "FRA-" + dep.padStart(2, "0")),
+                    z: values,
+                    text: departments.map(dep => 
+                        `${data[dep].name} (${dep})<br>` +
+                        `${data[dep].contacted || 0} contactées / ${data[dep].total}`),
+                    colorscale: "Reds",
+                    colorbar: {
+                        title: "Pharmacies"
+                    }
+                };
+
+                const layout = {
+                    geo: {
+                        scope: "europe",
+                        resolution: 50,
+                        showcountries: true,
+                        countrycolor: "rgb(204, 204, 204)",
+                        showlakes: true,
+                        lakecolor: "rgb(255, 255, 255)"
+                    },
+                    margin: { t: 0, b: 0, l: 0, r: 0 }
+                };
+
+                Plotly.newPlot("map", [trace], layout, {responsive: true});
+                document.getElementById("progression").innerHTML =
+                    `Progression : ${totalContacted} pharmacies contactées sur ${total}`;
+            })
+            .catch(err => {
+                document.getElementById("progression").innerHTML =
+                    "Erreur lors du chargement des données.";
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
