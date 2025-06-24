@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Carte interactive France – suivi pharmacies</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+<h2 style="text-align:center;">Carte interactive – suivi des pharmacies contactées</h2>
+<div id="map" style="width:100%;height:90vh;"></div>
+<script>
+let pharmaData = {"01": 704, "02": 164, "03": 75, "04": 809, "05": 331, "06": 300, "07": 278, "08": 192, "09": 804, "10": 154, "11": 742, "12": 808, "13": 608, "14": 139, "15": 654, "16": 482, "17": 82, "18": 80, "19": 145, "20": 273, "21": 288, "22": 567, "23": 666, "24": 77, "25": 624, "26": 253, "27": 783, "28": 715, "29": 768, "30": 608, "31": 479, "32": 275, "33": 509, "34": 653, "35": 334, "36": 878, "37": 56, "38": 827, "39": 875, "40": 213, "41": 764, "42": 482, "43": 398, "44": 334, "45": 209, "46": 270, "47": 831, "48": 394, "49": 154, "50": 144, "51": 439, "52": 149, "53": 417, "54": 402, "55": 668, "56": 320, "57": 876, "58": 94, "59": 797, "60": 520, "61": 599, "62": 177, "63": 437, "64": 130, "65": 615, "66": 350, "67": 899, "68": 693, "69": 683, "70": 420, "71": 641, "72": 246, "73": 771, "74": 121, "75": 96, "76": 727, "77": 283, "78": 841, "79": 346, "80": 131, "81": 288, "82": 153, "83": 439, "84": 334, "85": 514, "86": 700, "87": 423, "88": 216, "89": 429, "90": 413, "91": 264, "92": 736, "93": 323, "94": 768, "95": 749, "96": 713};
+let contactData = JSON.parse(localStorage.getItem('contactData') || '{}');
+let ids = Object.keys(pharmaData);
+let values = ids.map(k => pharmaData[k]);
+let data = [{
+  type: "choropleth",
+  locationmode: "ISO-3",
+  locations: ids,
+  z: values,
+  colorscale: "Blues",
+  colorbar: { title: "Pharmacies" },
+  hovertemplate: 'Département %{location}<br>%{z} pharmacies<extra></extra>'
+}];
+
+function updateProgression() {
+  let contacted = 0;
+  ids.forEach(dep => {
+    if (contactData[dep]) {
+      contacted += contactData[dep];
+    }
+  });
+  let total = ids.reduce((sum, d) => sum + (pharmaData[d] || 0), 0);
+  let banner = document.getElementById("global-progress");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "global-progress";
+    banner.style.position = "fixed";
+    banner.style.top = "10px";
+    banner.style.left = "50%";
+    banner.style.transform = "translateX(-50%)";
+    banner.style.background = "#ffffffdd";
+    banner.style.padding = "10px 20px";
+    banner.style.border = "1px solid #ccc";
+    banner.style.borderRadius = "10px";
+    banner.style.zIndex = "9999";
+    banner.style.fontFamily = "sans-serif";
+    banner.style.fontSize = "16px";
+    document.body.appendChild(banner);
+  }
+  banner.innerText = `📊 Progression : ${contacted} pharmacies contactées sur ${total}`;
+}
+
+Plotly.newPlot('map', data, {
+  geo: {
+    scope: 'europe',
+    resolution: 50,
+    showframe: false,
+    showcountries: false,
+    projection: { type: 'mercator' }
+  },
+  margin: { t: 0, b: 0, l: 0, r: 0 },
+  title: ''
+}, {responsive: true});
+
+document.getElementById('map').on('plotly_click', function(e) {
+  const id = e.points[0].location;
+  const max = pharmaData[id];
+  const current = contactData[id] || 0;
+  const res = prompt(`📍 Département ${id}\n${max} pharmacies\nCombien contactées ?`, current);
+  const val = parseInt(res);
+  if (!isNaN(val) && val >= 0 && val <= max) {
+    contactData[id] = val;
+    localStorage.setItem("contactData", JSON.stringify(contactData));
+    updateProgression();
+  }
+});
+
+updateProgression();
+</script>
+</body>
+</html>
