@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Carte interactive – suivi des pharmacies contactées</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+<div id="map" style="width:100%;height:95vh;"></div>
+<script>
+let contactData = JSON.parse(localStorage.getItem('contactData') || '{}');
+
+function updateProgression(data, ids, totalMap) {
+  let contacted = 0;
+  ids.forEach(dep => {
+    if (contactData[dep]) {
+      contacted += contactData[dep];
+    }
+  });
+  let total = ids.reduce((sum, d) => sum + (totalMap[d] || 0), 0);
+  let banner = document.getElementById("global-progress");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "global-progress";
+    banner.style.position = "fixed";
+    banner.style.top = "10px";
+    banner.style.left = "50%";
+    banner.style.transform = "translateX(-50%)";
+    banner.style.background = "#ffffffdd";
+    banner.style.padding = "10px 20px";
+    banner.style.border = "1px solid #ccc";
+    banner.style.borderRadius = "10px";
+    banner.style.zIndex = "9999";
+    banner.style.fontFamily = "sans-serif";
+    banner.style.fontSize = "16px";
+    document.body.appendChild(banner);
+  }
+  banner.innerText = `📊 Progression : ${contacted} pharmacies contactées sur ${total}`;
+}
+
+fetch("https://france-geojson.gregoiredavid.fr/repo/departements.geojson")
+.then(res => res.json())
+.then(geojson => {
+  fetch("https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/data/departements.json")
+  .then(r => r.json())
+  .then(ref => {
+    const ids = Object.keys(ref);
+    const names = Object.values(ref).map(d => d.nom);
+    const values = ids.map(d => Math.floor(Math.random() * 800) + 50); // simulate
+
+    const totalMap = {};
+    ids.forEach((id, i) => totalMap[id] = values[i]);
+
+    const data = [{
+      type: "choroplethmapbox",
+      geojson,
+      locations: ids,
+      z: values,
+      text: names,
+      colorscale: "Blues",
+      colorbar: { title: "Nombre de pharmacies" },
+      marker: { line: { width: 0.5, color: 'gray' } },
+      hovertemplate: '%{text}<br>%{z} pharmacies<br><extra></extra>'
+    }];
+
+    const layout = {
+      mapbox: {
+        style: "carto-positron",
+        center: { lon: 2.5, lat: 46.5 },
+        zoom: 4.7
+      },
+      margin: { t: 40, b: 0, l: 0, r: 0 },
+      title: "Carte interactive – suivi des pharmacies contactées"
+    };
+
+    Plotly.newPlot('map', data, layout, {responsive: true});
+
+    document.getElementById('map').on('plotly_click', function(e) {
+      const id = e.points[0].location;
+      const label = e.points[0].text;
+      const max = totalMap[id];
+      const current = contactData[id] || 0;
+      const res = prompt(`📍 ${label}
+${max} pharmacies
+Combien contactées ?`, current);
+      const val = parseInt(res);
+      if (!isNaN(val) && val >= 0 && val <= max) {
+        contactData[id] = val;
+        localStorage.setItem("contactData", JSON.stringify(contactData));
+        updateProgression(data, ids, totalMap);
+      }
+    });
+
+    updateProgression(data, ids, totalMap);
+  });
+});
+</script>
+</body>
+</html>
