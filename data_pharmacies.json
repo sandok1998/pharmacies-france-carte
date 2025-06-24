@@ -1,0 +1,32 @@
+{
+    "01": {
+        "nom": "Ain",
+        "total": 300,
+        "contactes": 0
+    },
+    "02": {
+        "nom": "Aisne",
+        "total": 280,
+        "contactes": 0
+    },
+    "03": {
+        "nom": "Allier",
+        "total": 220,
+        "contactes": 0
+    },
+    "13": {
+        "nom": "Bouches-du-Rh\u00f4ne",
+        "total": 830,
+        "contactes": 0
+    },
+    "33": {
+        "nom": "Gironde",
+        "total": 600,
+        "contactes": 0
+    },
+    "75": {
+        "nom": "Paris",
+        "total": 520,
+        "contactes": 0
+    }
+}
